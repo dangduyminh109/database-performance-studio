@@ -1,0 +1,26 @@
+server:
+  address: 127.0.0.1
+  port: ${STUDIO_API_PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+spring:
+  datasource:
+    url: ${STUDIO_METADATA_URL:jdbc:postgresql://127.0.0.1:5433/studio}
+    username: ${STUDIO_METADATA_USER:studio}
+    password: ${STUDIO_METADATA_PASSWORD}
+    hikari:
+      maximum-pool-size: 8
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  mvc:
+    async:
+      request-timeout: 1800000
+studio:
+  encryption-key: ${STUDIO_ENCRYPTION_KEY}
+  source-hosts: ${STUDIO_SOURCE_HOSTS:127.0.0.1,localhost}
+  browser-origins: ${STUDIO_BROWSER_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
+  docker: ${STUDIO_DOCKER:docker}
+  sandbox-host: ${STUDIO_SANDBOX_HOST:127.0.0.1}

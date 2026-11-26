@@ -1,0 +1,46 @@
+name: Build and verify
+on:
+  push:
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew test bootJar
+        working-directory: backend
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run typecheck && npm run build
+        working-directory: frontend
+      - name: Smoke test against Docker PostgreSQL
+        run: |
+          ./scripts/initialize-env.sh
+          docker compose up -d --wait metadata
+          set -a
+          source .env
+          set +a
+          java -jar backend/build/libs/database-performance-studio-0.1.0.jar > /tmp/studio-api.log 2>&1 &
+          studio_pid=$!
+          trap 'kill "$studio_pid" 2>/dev/null || true; docker compose down --volumes' EXIT
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:8080/api/health > /dev/null; then break; fi
+            sleep 1
+          done
+          if ! node scripts/smoke.mjs; then
+            cat /tmp/studio-api.log
+            exit 1
+          fi

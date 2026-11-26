@@ -1,0 +1,7 @@
+.env
+.gradle/
+build/
+node_modules/
+.next/
+*.tsbuildinfo
+frontend/public/monaco/
